@@ -19,6 +19,7 @@ pub struct Settings {
 
     /// **Platform specific: Windows**
     /// Environment kind. Default to user
+    #[cfg(target_os = "windows")]
     pub kind: RegistryKind,
 }
 
@@ -26,6 +27,7 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             ignore_errors: true,
+            #[cfg(target_os = "windows")]
             kind: RegistryKind::User,
         }
     }
