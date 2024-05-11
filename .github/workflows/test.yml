@@ -1,0 +1,55 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    paths:
+      - '.github/workflows/test-rust.yml'
+      - 'src/**'
+      - 'Cargo.*'
+
+env:
+  RUST_BACKTRACE: 1
+  CARGO_PROFILE_DEV_DEBUG: 0 # This would add unnecessary bloat to the target folder, decreasing cache efficiency.
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ${{ matrix.platform.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - {
+              target: x86_64-pc-windows-msvc,
+              os: windows-latest
+            }
+          - {
+              target: x86_64-unknown-linux-gnu,
+              os: ubuntu-latest
+            }
+          - {
+              target: x86_64-apple-darwin,
+              os: macos-latest
+            }
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 'Setup Rust'
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: tooling/cli
+
+      - name: test
+        run: cargo test --manifest-path Cargo.toml ${{ matrix.platform.args }}

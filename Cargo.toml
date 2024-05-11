@@ -1,0 +1,22 @@
+[package]
+name = "patty"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+eyre = "0.6.12"
+log = "0.4.21"
+
+[target."cfg(windows)".dependencies.windows]
+version = "0.56.0"
+features = ["Win32_UI", "Win32_UI_WindowsAndMessaging"]
+
+[target."cfg(windows)".dependencies]
+winreg = "0.52.0"
+
+[dev-dependencies]
+serial_test = "3.1.1"
+
+[[example]]
+name = "simple"
+path = "examples/simple.rs"
