@@ -1,7 +1,7 @@
 use crate::{utils, Options, PathManager};
 use eyre::{bail, Context, Result};
-use std::io;
 use std::path::PathBuf;
+use std::{env, io};
 use winreg::enums::{RegType, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, KEY_READ, KEY_WRITE};
 use winreg::{RegKey, RegValue};
 
@@ -28,63 +28,38 @@ impl PathManager for Patty {
         if !self.options.ignore_errors && self.exists(folder.clone())? {
             bail!("already exists")
         }
-
-        let mut path = std::env::var("PATH").context("not found")?;
+        let mut path = read_path(&self.options)?;
+        let folder_exists = env::split_paths(&path)
+            .any(|p| utils::normalize_path(&p) == utils::normalize_path(&folder));
+        if folder_exists {
+            if !self.options.ignore_errors {
+                bail!("path {} already exists!", folder.display());
+            }
+            return self.get();
+        }
         if path.ends_with(';') {
             path.pop();
         }
         path.push_str(&format!(";{}", folder.to_str().unwrap()));
         apply_new_path(path.clone(), &self.options.kind)?;
-        let mut new_path = self.get()?;
-        new_path.push(folder);
-        Ok(new_path)
+        self.get()
     }
 
     // Get the windows PATH variable out of the registry as a String. If
     // this returns None then the PATH variable is not a string and we
     // should not mess with it.
     fn get(&mut self) -> Result<Vec<PathBuf>> {
-        let environment_path = match self.options.kind {
-            RegistryKind::User => "Environment",
-            RegistryKind::System => {
-                "SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment"
-            }
-        };
-
-        let root = RegKey::predef(if self.options.kind == RegistryKind::User {
-            HKEY_CURRENT_USER
-        } else {
-            HKEY_LOCAL_MACHINE
-        });
-        let environment = root
-            .open_subkey_with_flags(environment_path, KEY_READ | KEY_WRITE)
-            .context("Failed opening Environment key")?;
-
-        let reg_value = environment.get_raw_value("PATH");
-        match reg_value {
-            Ok(val) => {
-                if let Some(s) = from_winreg_value(&val) {
-                    let path = String::from_utf16(&s).context("decode error")?;
-                    let paths = std::env::split_paths(&path);
-                    let paths = paths.map(|p| p.to_path_buf()).collect();
-                    Ok(paths)
-                } else {
-                    log::warn!(
-                        "the registry key {}\\PATH is not a string. Not modifying the PATH variable",
-                        if self.options.kind == RegistryKind::User { "HKEY_CURRENT_USER\\Environment" } else { "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment" }
-                    );
-                    Ok(Vec::new())
-                }
-            }
-            Err(ref e) if e.kind() == io::ErrorKind::NotFound => Ok(Vec::new()),
-            Err(e) => Err(e).context("unknown"),
-        }
+        let path = read_path(&self.options)?;
+        let folders = std::env::split_paths(&path)
+            .map(|p| p.to_path_buf())
+            .collect();
+        Ok(folders)
     }
     fn remove(&mut self, folder: PathBuf) -> Result<Vec<PathBuf>> {
         if !self.options.ignore_errors && !self.exists(folder.clone())? {
             bail!("not found")
         }
-        let mut path = std::env::var("PATH").context("not found")?;
+        let mut path = read_path(&self.options)?;
         if path.ends_with(';') {
             path.pop();
         }
@@ -98,6 +73,44 @@ impl PathManager for Patty {
         apply_new_path(new_path.clone(), &self.options.kind)?;
         let new_path = new_folders.iter().map(PathBuf::from).collect();
         Ok(new_path)
+    }
+}
+
+fn read_path(options: &Options) -> Result<String> {
+    let environment_path = match options.kind {
+        RegistryKind::User => "Environment",
+        RegistryKind::System => "SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment",
+    };
+
+    let root = RegKey::predef(if options.kind == RegistryKind::User {
+        HKEY_CURRENT_USER
+    } else {
+        HKEY_LOCAL_MACHINE
+    });
+    let environment = root
+        .open_subkey_with_flags(environment_path, KEY_READ | KEY_WRITE)
+        .context("Failed opening Environment key")?;
+
+    let reg_value = environment.get_raw_value("PATH");
+    match reg_value {
+        Ok(val) => {
+            if let Some(s) = from_winreg_value(&val) {
+                let path = String::from_utf16(&s).context("decode error")?;
+                Ok(path)
+            } else {
+                log::warn!(
+                    "the registry key {}\\PATH is not a string. Not modifying the PATH variable",
+                    if options.kind == RegistryKind::User {
+                        "HKEY_CURRENT_USER\\Environment"
+                    } else {
+                        "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment"
+                    }
+                );
+                Ok(String::new())
+            }
+        }
+        Err(ref e) if e.kind() == io::ErrorKind::NotFound => Ok(String::new()),
+        Err(e) => Err(e).context("unknown"),
     }
 }
 
