@@ -2,7 +2,7 @@ use patty::{home_dir, Options, PathManager};
 
 fn main() {
     let home = home_dir().unwrap();
-    let bin_path = home.join(".example/bin");
+    let bin_path = home.join("bin");
     let options = Options {
         // macOS / Linux
         #[cfg(unix)]
