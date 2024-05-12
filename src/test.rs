@@ -1,18 +1,20 @@
-use crate::{PathManager, Patty, Settings};
+use std::path::PathBuf;
+
+use crate::{Options, PathManager, Patty};
 use serial_test::serial;
 
 #[test]
 #[serial]
-fn append() {
-    let mut patty = Patty::new(Settings::default());
+fn add() {
+    let mut patty = Patty::new(Options::default());
     let path = "hello/world";
-    patty.append(path).unwrap();
+    patty.add(path.into()).unwrap();
     let new_path = patty.get().unwrap();
-    let new_path = new_path.unwrap();
-    patty.remove(path).unwrap();
-    assert!(new_path.contains(if cfg!(windows) {
+    patty.remove(path.into()).unwrap();
+    let exists = new_path.contains(&PathBuf::from(if cfg!(windows) {
         ";hello/world"
     } else {
         ":hello/world"
     }));
+    assert!(exists);
 }

@@ -1,14 +1,8 @@
-use patty::{PathManager, Settings};
+use patty::{home_dir, Options, PathManager};
 
 fn main() {
-    let mut patty = patty::Patty::new(Settings::default());
-    let path = patty.get().unwrap();
-    match path {
-        Some(path) => {
-            println!("PATH = {}", path);
-        }
-        None => {
-            println!("PATH is empty")
-        }
-    }
+    let home = home_dir().unwrap();
+    let bin_path = home.join(".example/bin");
+    let mut patty = patty::Patty::new(Options::default());
+    patty.add(bin_path).unwrap();
 }

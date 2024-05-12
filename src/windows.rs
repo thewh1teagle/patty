@@ -1,4 +1,4 @@
-use crate::{PathManager, Settings};
+use crate::{Options, PathManager};
 use eyre::{bail, Context, Result};
 use std::io;
 use winreg::enums::{RegType, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, KEY_READ, KEY_WRITE};
@@ -13,18 +13,18 @@ pub enum RegistryKind {
 }
 
 pub struct Patty {
-    pub settings: Settings,
+    pub options: Options,
 }
 
 impl Patty {
-    pub fn new(settings: Settings) -> Self {
-        Self { settings }
+    pub fn new(options: Options) -> Self {
+        Self { options }
     }
 }
 
 impl PathManager for Patty {
-    fn append(&mut self, folder: &str) -> Result<String> {
-        if !self.settings.ignore_errors && self.exists(folder)? {
+    fn add(&mut self, folder: &str) -> Result<String> {
+        if !self.options.ignore_errors && self.exists(folder)? {
             bail!("already exists")
         }
 
@@ -33,22 +33,22 @@ impl PathManager for Patty {
             path.pop();
         }
         path.push_str(&format!(";{}", folder));
-        apply_new_path(path.clone(), &self.settings.kind)?;
+        apply_new_path(path.clone(), &self.options.kind)?;
         Ok(path)
     }
 
     // Get the windows PATH variable out of the registry as a String. If
     // this returns None then the PATH variable is not a string and we
     // should not mess with it.
-    fn get(&mut self) -> Result<Option<String>> {
-        let environment_path = match self.settings.kind {
+    fn get(&mut self) -> Result<Vec<PathBuf>> {
+        let environment_path = match self.options.kind {
             RegistryKind::User => "Environment",
             RegistryKind::System => {
                 "SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment"
             }
         };
 
-        let root = RegKey::predef(if self.settings.kind == RegistryKind::User {
+        let root = RegKey::predef(if self.options.kind == RegistryKind::User {
             HKEY_CURRENT_USER
         } else {
             HKEY_LOCAL_MACHINE
@@ -61,11 +61,12 @@ impl PathManager for Patty {
         match reg_value {
             Ok(val) => {
                 if let Some(s) = from_winreg_value(&val) {
-                    Ok(Some(String::from_utf16(&s).context("decode error")?))
+                    let path = String::from_utf16(&s).context("decode error")?;
+                    Ok(Some(path))
                 } else {
                     log::warn!(
                         "the registry key {}\\PATH is not a string. Not modifying the PATH variable",
-                        if self.settings.kind == RegistryKind::User { "HKEY_CURRENT_USER\\Environment" } else { "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment" }
+                        if self.options.kind == RegistryKind::User { "HKEY_CURRENT_USER\\Environment" } else { "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment" }
                     );
                     Ok(None)
                 }
@@ -75,7 +76,7 @@ impl PathManager for Patty {
         }
     }
     fn remove(&mut self, folder: &str) -> Result<String> {
-        if !self.settings.ignore_errors && !self.exists(folder)? {
+        if !self.options.ignore_errors && !self.exists(folder)? {
             bail!("not found")
         }
         let mut path = self.get()?.unwrap_or_default();
@@ -89,23 +90,8 @@ impl PathManager for Patty {
             .filter(|&f| normalize(f) != folder)
             .collect();
         let new_path = new_folders.join(";");
-        apply_new_path(new_path.clone(), &self.settings.kind)?;
+        apply_new_path(new_path.clone(), &self.options.kind)?;
         Ok(new_path)
-    }
-
-    fn exists(&mut self, folder: &str) -> Result<bool> {
-        let path = self.get()?;
-        let folder = normalize(folder);
-        if let Some(path) = path {
-            let entries = path.split(';').collect::<Vec<&str>>();
-            for entry in entries {
-                let entry = normalize(entry);
-                if folder == entry {
-                    return Ok(true);
-                }
-            }
-        }
-        Ok(false)
     }
 }
 
