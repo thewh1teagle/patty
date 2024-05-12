@@ -9,5 +9,6 @@ fn add() {
     let path: PathBuf = home_dir().unwrap().join("hello/world");
     let new_path = patty.add(path.clone()).unwrap();
     let exists = new_path.contains(&path);
+    patty.remove(path.clone()).unwrap();
     assert!(exists);
 }
