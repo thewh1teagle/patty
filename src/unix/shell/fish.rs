@@ -11,19 +11,15 @@ pub struct Fish;
 impl UnixShell for Fish {
     fn does_exist(&self) -> bool {
         // fish has to either be the shell or be callable for fish setup.
-        matches!(env::var("SHELL"), Ok(sh) if sh.contains("fish"))
-            || utils::which(&"fish").is_some()
+        matches!(env::var("SHELL"), Ok(sh) if sh.contains("fish")) || utils::which("fish").is_some()
     }
 
     // > "$XDG_CONFIG_HOME/fish/conf.d" (or "~/.config/fish/conf.d" if that variable is unset) for the user
     // from <https://github.com/fish-shell/fish-shell/issues/3170#issuecomment-228311857>
     fn rcfiles(&self) -> Vec<PathBuf> {
-        let p0 = env::var("XDG_CONFIG_HOME").ok().map(|p| {
-            let path = PathBuf::from(p);
-            path
-        });
+        let p0 = env::var("XDG_CONFIG_HOME").ok().map(PathBuf::from);
 
-        let p1 = utils::home_dir().map(|path| path);
+        let p1 = utils::home_dir();
 
         p0.into_iter().chain(p1).collect()
     }

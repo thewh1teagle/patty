@@ -32,7 +32,7 @@ impl Zsh {
 impl UnixShell for Zsh {
     fn does_exist(&self) -> bool {
         // zsh has to either be the shell or be callable for zsh setup.
-        matches!(env::var("SHELL"), Ok(sh) if sh.contains("zsh")) || utils::which(&"zsh").is_some()
+        matches!(env::var("SHELL"), Ok(sh) if sh.contains("zsh")) || utils::which("zsh").is_some()
     }
 
     fn rcfiles(&self) -> Vec<PathBuf> {

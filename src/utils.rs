@@ -72,11 +72,11 @@ pub fn normalize_path(path: &Path) -> String {
     let path = path.to_str().unwrap();
     #[cfg(unix)]
     {
-        let mut path = path.replace("\\", "/");
-        if path.ends_with("/") {
+        let mut path = path.replace('\\', "/");
+        if path.ends_with('/') {
             path.pop();
         }
-        return path;
+        path
     }
     #[cfg(windows)]
     {

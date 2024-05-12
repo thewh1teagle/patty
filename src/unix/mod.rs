@@ -61,7 +61,7 @@ impl PathManager for Patty {
         }
 
         let mut new_path = self.get()?;
-        new_path.push(bin_folder.into());
+        new_path.push(bin_folder);
         Ok(new_path)
     }
 
@@ -102,7 +102,7 @@ impl PathManager for Patty {
         }
 
         let mut new_path = self.get()?;
-        new_path.push(bin_folder.into());
+        new_path.push(bin_folder);
         Ok(new_path)
     }
 }
