@@ -1,10 +1,16 @@
-use eyre::Result;
-use std::io::Write;
+use std::env;
 use std::path::{Path, PathBuf};
-use std::{env, fs, io};
+
+#[cfg(unix)]
+use eyre::Result;
+#[cfg(unix)]
+use std::{
+    fs,
+    io::{self, Write},
+};
 
 pub fn home_dir() -> Option<PathBuf> {
-    if let Ok(home) = env::var("HOME") {
+    if let Ok(home) = env::var(if cfg!(windows) { "USERPROFILE" } else { "HOME" }) {
         return Some(PathBuf::from(home));
     }
     None
@@ -12,6 +18,7 @@ pub fn home_dir() -> Option<PathBuf> {
 
 /// Check if the given program name (without suffix) exists in PATH
 /// Return Path or None
+#[cfg(unix)]
 pub fn which(cmd: &str) -> Option<PathBuf> {
     let cmd = format!("{}{}", cmd, env::consts::EXE_SUFFIX);
     let path_env = env::var("PATH").unwrap_or_default();
@@ -25,6 +32,7 @@ pub fn which(cmd: &str) -> Option<PathBuf> {
     None
 }
 
+#[cfg(unix)]
 pub fn ensure_dir_exists(path: PathBuf) -> Result<()> {
     if !path.is_dir() {
         fs::create_dir_all(path)?;
@@ -32,6 +40,7 @@ pub fn ensure_dir_exists(path: PathBuf) -> Result<()> {
     Ok(())
 }
 
+#[cfg(unix)]
 pub fn append_file(dest: PathBuf, line: &str) -> Result<()> {
     let mut dest_file = fs::OpenOptions::new()
         .append(true)
@@ -44,6 +53,7 @@ pub fn append_file(dest: PathBuf, line: &str) -> Result<()> {
     Ok(())
 }
 
+#[cfg(unix)]
 pub fn write_file(path: &Path, contents: &str) -> Result<()> {
     let mut file = fs::OpenOptions::new()
         .write(true)
@@ -74,6 +84,6 @@ pub fn normalize_path(path: &Path) -> String {
         if path.ends_with('\\') {
             path.pop();
         }
-        return path;
+        path
     }
 }

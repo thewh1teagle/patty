@@ -17,7 +17,7 @@ pub use unix::Patty;
 
 use utils::normalize_path;
 #[cfg(target_os = "windows")]
-use windows::RegistryKind;
+pub use windows::RegistryKind;
 
 #[cfg(target_os = "windows")]
 pub use windows::Patty;
@@ -90,7 +90,7 @@ pub trait PathManager {
         let folders = self.get()?;
         for folder in folders {
             if normalize_path(bin_path.as_path()) == normalize_path(&folder) {
-                return  Ok(true);
+                return Ok(true);
             }
         }
         Ok(false)
