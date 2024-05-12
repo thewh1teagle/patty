@@ -84,7 +84,6 @@ impl PathManager for Patty {
             let app_env_path = app_env_path.clone();
             let source_cmd = sh.source_string(&app_env_path)?;
 
-
             for rc in sh.update_rcs() {
                 let cmd_to_write = fs::read_to_string(&rc)?;
                 let cmd_to_write = cmd_to_write.replace(&source_cmd, "");

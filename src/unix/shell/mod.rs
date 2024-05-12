@@ -17,12 +17,7 @@ pub struct ShellScript {
 }
 
 impl ShellScript {
-    pub fn write(
-        &self,
-        path: &Path,
-        bin_folder: &Path,
-        description: Option<String>,
-    ) -> Result<()> {
+    pub fn write(&self, path: &Path, bin_folder: &Path, description: Option<String>) -> Result<()> {
         let mut content = self
             .content
             .replace("{template_bin_path}", bin_folder.to_str().unwrap());

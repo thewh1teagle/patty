@@ -1,5 +1,8 @@
 use crate::utils;
-use std::{env, path::{Path, PathBuf}};
+use std::{
+    env,
+    path::{Path, PathBuf},
+};
 
 use super::{ShellScript, UnixShell};
 use eyre::Result;
