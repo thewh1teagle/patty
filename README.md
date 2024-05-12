@@ -10,6 +10,12 @@ It's particularly useful for `CLI` apps that need to be accessible in `PATH`.
 
 `Patty` achieves this by modifying the registry in `Windows` and adjusting `RC` files in `Linux`/`macOS`, such as `zshrc` or `bashrc`.
 
+# Install
+
+```console
+cargo add patty
+```
+
 # Usage
 
 ```rust
