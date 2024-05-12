@@ -38,4 +38,4 @@ see [examples](examples)
 
 # Credits
 
-Inspired from [github.com/rust-lang/rustup](https://github.com/rust-lang/rustup)
+Inspired by [github.com/rust-lang/rustup](https://github.com/rust-lang/rustup)
