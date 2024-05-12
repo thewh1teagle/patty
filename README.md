@@ -1,5 +1,7 @@
 # Patty
 
+[![Crates](https://img.shields.io/crates/v/patty?logo=rust)](https://crates.io/crates/patty/)
+
 Cross platform system PATH manager.
 
 # Introduction
