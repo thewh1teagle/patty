@@ -19,7 +19,7 @@ cargo add patty
 # Usage
 
 ```rust
-use patty::{home_dir, Options, PathManager};
+use patty::{PathManager, Options, home_dir};
 
 fn main() {
     let mut patty = patty::Patty::new(Options::default());
